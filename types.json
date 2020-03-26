@@ -1,0 +1,635 @@
+[
+    {
+        "path": "automation/BrowserManager.py",
+        "line": 75,
+        "func_name": "Browser.ready",
+        "type_comments": [
+            "() -> bool"
+        ],
+        "samples": 3
+    },
+    {
+        "path": "automation/BrowserManager.py",
+        "line": 80,
+        "func_name": "Browser.set_visit_id",
+        "type_comments": [
+            "(int) -> None"
+        ],
+        "samples": 3
+    },
+    {
+        "path": "automation/BrowserManager.py",
+        "line": 83,
+        "func_name": "Browser.launch_browser_manager",
+        "type_comments": [
+            "() -> bool"
+        ],
+        "samples": 3
+    },
+    {
+        "path": "automation/CommandSequence.py",
+        "line": 5,
+        "func_name": "CommandSequence",
+        "type_comments": [
+            "() -> None"
+        ],
+        "samples": 1
+    },
+    {
+        "path": "automation/CommandSequence.py",
+        "line": 25,
+        "func_name": "CommandSequence.__init__",
+        "type_comments": [
+            "(str, bool, bool, None, None) -> None"
+        ],
+        "samples": 3
+    },
+    {
+        "path": "automation/CommandSequence.py",
+        "line": 53,
+        "func_name": "CommandSequence.get",
+        "type_comments": [
+            "(int, int) -> None"
+        ],
+        "samples": 3
+    },
+    {
+        "path": "automation/DataAggregator/BaseAggregator.py",
+        "line": 19,
+        "func_name": "BaseListener",
+        "type_comments": [
+            "() -> None"
+        ],
+        "samples": 1
+    },
+    {
+        "path": "automation/DataAggregator/BaseAggregator.py",
+        "line": 108,
+        "func_name": "BaseAggregator",
+        "type_comments": [
+            "() -> None"
+        ],
+        "samples": 1
+    },
+    {
+        "path": "automation/DataAggregator/BaseAggregator.py",
+        "line": 122,
+        "func_name": "BaseAggregator.__init__",
+        "type_comments": [
+            "(Dict[str, str], List[Dict[str, Union[bool, str]]]) -> None"
+        ],
+        "samples": 1
+    },
+    {
+        "path": "automation/DataAggregator/BaseAggregator.py",
+        "line": 145,
+        "func_name": "BaseAggregator.get_most_recent_status",
+        "type_comments": [
+            "() -> int"
+        ],
+        "samples": 3
+    },
+    {
+        "path": "automation/DataAggregator/BaseAggregator.py",
+        "line": 166,
+        "func_name": "BaseAggregator.get_status",
+        "type_comments": [
+            "() -> int"
+        ],
+        "samples": 1
+    },
+    {
+        "path": "automation/DataAggregator/BaseAggregator.py",
+        "line": 179,
+        "func_name": "BaseAggregator.launch",
+        "type_comments": [
+            "(function, *bool) -> None"
+        ],
+        "samples": 1
+    },
+    {
+        "path": "automation/DataAggregator/BaseAggregator.py",
+        "line": 191,
+        "func_name": "BaseAggregator.shutdown",
+        "type_comments": [
+            "() -> None"
+        ],
+        "samples": 1
+    },
+    {
+        "path": "automation/DataAggregator/LocalAggregator.py",
+        "line": 49,
+        "func_name": "LocalListener",
+        "type_comments": [
+            "() -> cell"
+        ],
+        "samples": 1
+    },
+    {
+        "path": "automation/DataAggregator/LocalAggregator.py",
+        "line": 173,
+        "func_name": "LocalAggregator",
+        "type_comments": [
+            "() -> cell"
+        ],
+        "samples": 1
+    },
+    {
+        "path": "automation/DataAggregator/LocalAggregator.py",
+        "line": 182,
+        "func_name": "LocalAggregator.__init__",
+        "type_comments": [
+            "(Dict[str, str], List[Dict[str, Union[bool, str]]]) -> None"
+        ],
+        "samples": 1
+    },
+    {
+        "path": "automation/DataAggregator/LocalAggregator.py",
+        "line": 200,
+        "func_name": "LocalAggregator._create_tables",
+        "type_comments": [
+            "() -> None"
+        ],
+        "samples": 1
+    },
+    {
+        "path": "automation/DataAggregator/LocalAggregator.py",
+        "line": 206,
+        "func_name": "LocalAggregator._get_last_used_ids",
+        "type_comments": [
+            "() -> None"
+        ],
+        "samples": 1
+    },
+    {
+        "path": "automation/DataAggregator/LocalAggregator.py",
+        "line": 220,
+        "func_name": "LocalAggregator.save_configuration",
+        "type_comments": [
+            "(bytes, bytes) -> None"
+        ],
+        "samples": 1
+    },
+    {
+        "path": "automation/DataAggregator/LocalAggregator.py",
+        "line": 244,
+        "func_name": "LocalAggregator.get_next_visit_id",
+        "type_comments": [
+            "() -> int"
+        ],
+        "samples": 3
+    },
+    {
+        "path": "automation/DataAggregator/LocalAggregator.py",
+        "line": 249,
+        "func_name": "LocalAggregator.get_next_crawl_id",
+        "type_comments": [
+            "() -> int"
+        ],
+        "samples": 3
+    },
+    {
+        "path": "automation/DataAggregator/LocalAggregator.py",
+        "line": 254,
+        "func_name": "LocalAggregator.launch",
+        "type_comments": [
+            "() -> None"
+        ],
+        "samples": 1
+    },
+    {
+        "path": "automation/DataAggregator/LocalAggregator.py",
+        "line": 259,
+        "func_name": "LocalAggregator.shutdown",
+        "type_comments": [
+            "() -> None"
+        ],
+        "samples": 1
+    },
+    {
+        "path": "automation/DataAggregator/S3Aggregator.py",
+        "line": 59,
+        "func_name": "S3Listener",
+        "type_comments": [
+            "() -> cell"
+        ],
+        "samples": 1
+    },
+    {
+        "path": "automation/DataAggregator/S3Aggregator.py",
+        "line": 321,
+        "func_name": "S3Aggregator",
+        "type_comments": [
+            "() -> cell"
+        ],
+        "samples": 1
+    },
+    {
+        "path": "automation/DeployBrowsers/selenium_firefox.py",
+        "line": 52,
+        "func_name": "FirefoxLogInterceptor",
+        "type_comments": [
+            "() -> None"
+        ],
+        "samples": 1
+    },
+    {
+        "path": "automation/DeployBrowsers/selenium_firefox.py",
+        "line": 91,
+        "func_name": "PatchedGeckoDriverService",
+        "type_comments": [
+            "() -> None"
+        ],
+        "samples": 1
+    },
+    {
+        "path": "automation/DeployBrowsers/selenium_firefox.py",
+        "line": 139,
+        "func_name": "FirefoxProfile",
+        "type_comments": [
+            "() -> None"
+        ],
+        "samples": 1
+    },
+    {
+        "path": "automation/Errors.py",
+        "line": 4,
+        "func_name": "CommandExecutionError",
+        "type_comments": [
+            "() -> cell"
+        ],
+        "samples": 1
+    },
+    {
+        "path": "automation/Errors.py",
+        "line": 13,
+        "func_name": "ProfileLoadError",
+        "type_comments": [
+            "() -> cell"
+        ],
+        "samples": 1
+    },
+    {
+        "path": "automation/Errors.py",
+        "line": 21,
+        "func_name": "BrowserConfigError",
+        "type_comments": [
+            "() -> cell"
+        ],
+        "samples": 1
+    },
+    {
+        "path": "automation/Errors.py",
+        "line": 29,
+        "func_name": "BrowserCrashError",
+        "type_comments": [
+            "() -> cell"
+        ],
+        "samples": 1
+    },
+    {
+        "path": "automation/MPLogger.py",
+        "line": 65,
+        "func_name": "ClientSocketHandler",
+        "type_comments": [
+            "() -> None"
+        ],
+        "samples": 1
+    },
+    {
+        "path": "automation/MPLogger.py",
+        "line": 96,
+        "func_name": "MPLogger",
+        "type_comments": [
+            "() -> None"
+        ],
+        "samples": 1
+    },
+    {
+        "path": "automation/MPLogger.py",
+        "line": 99,
+        "func_name": "MPLogger.__init__",
+        "type_comments": [
+            "(str, Dict[str, str], int, int, int, int) -> None"
+        ],
+        "samples": 1
+    },
+    {
+        "path": "automation/MPLogger.py",
+        "line": 120,
+        "func_name": "MPLogger._initialize_loggers",
+        "type_comments": [
+            "() -> None"
+        ],
+        "samples": 1
+    },
+    {
+        "path": "automation/MPLogger.py",
+        "line": 213,
+        "func_name": "MPLogger._start_listener",
+        "type_comments": [
+            "() -> None"
+        ],
+        "samples": 1
+    },
+    {
+        "path": "automation/MPLogger.py",
+        "line": 239,
+        "func_name": "MPLogger._process_record",
+        "type_comments": [
+            "(Dict[str, Union[Tuple[], int, str]]) -> None",
+            "(List[str]) -> None"
+        ],
+        "samples": 7
+    },
+    {
+        "path": "automation/MPLogger.py",
+        "line": 245,
+        "func_name": "MPLogger._handle_extension_log",
+        "type_comments": [
+            "(List[str]) -> None"
+        ],
+        "samples": 5
+    },
+    {
+        "path": "automation/MPLogger.py",
+        "line": 261,
+        "func_name": "MPLogger._handle_serialized_writes",
+        "type_comments": [
+            "(Dict[str, Union[Tuple[], int, str]]) -> None",
+            "(Dict[str, Optional[Union[int, str]]]) -> None"
+        ],
+        "samples": 7
+    },
+    {
+        "path": "automation/MPLogger.py",
+        "line": 279,
+        "func_name": "MPLogger.close",
+        "type_comments": [
+            "() -> None"
+        ],
+        "samples": 1
+    },
+    {
+        "path": "automation/SocketInterface.py",
+        "line": 15,
+        "func_name": "serversocket",
+        "type_comments": [
+            "() -> None"
+        ],
+        "samples": 1
+    },
+    {
+        "path": "automation/SocketInterface.py",
+        "line": 21,
+        "func_name": "serversocket.__init__",
+        "type_comments": [
+            "(str, bool) -> None"
+        ],
+        "samples": 1
+    },
+    {
+        "path": "automation/SocketInterface.py",
+        "line": 31,
+        "func_name": "serversocket.start_accepting",
+        "type_comments": [
+            "() -> None"
+        ],
+        "samples": 1
+    },
+    {
+        "path": "automation/SocketInterface.py",
+        "line": 54,
+        "func_name": "serversocket._handle_conn",
+        "type_comments": [
+            "(socket.socket, Tuple[str, int]) -> pyannotate_runtime.collect_types.UnknownType"
+        ],
+        "samples": 3
+    },
+    {
+        "path": "automation/SocketInterface.py",
+        "line": 98,
+        "func_name": "serversocket.receive_msg",
+        "type_comments": [
+            "(socket.socket, int) -> bytes"
+        ],
+        "samples": 9
+    },
+    {
+        "path": "automation/SocketInterface.py",
+        "line": 107,
+        "func_name": "serversocket.close",
+        "type_comments": [
+            "() -> None"
+        ],
+        "samples": 1
+    },
+    {
+        "path": "automation/SocketInterface.py",
+        "line": 111,
+        "func_name": "clientsocket",
+        "type_comments": [
+            "() -> None"
+        ],
+        "samples": 1
+    },
+    {
+        "path": "automation/SocketInterface.py",
+        "line": 114,
+        "func_name": "clientsocket.__init__",
+        "type_comments": [
+            "(str, bool) -> None"
+        ],
+        "samples": 1
+    },
+    {
+        "path": "automation/SocketInterface.py",
+        "line": 127,
+        "func_name": "clientsocket.connect",
+        "type_comments": [
+            "(str, int) -> None"
+        ],
+        "samples": 1
+    },
+    {
+        "path": "automation/SocketInterface.py",
+        "line": 132,
+        "func_name": "clientsocket.send",
+        "type_comments": [
+            "(Tuple[str, Dict[str, Optional[Union[int, str]]]]) -> None"
+        ],
+        "samples": 4
+    },
+    {
+        "path": "automation/SocketInterface.py",
+        "line": 165,
+        "func_name": "clientsocket.close",
+        "type_comments": [
+            "() -> None"
+        ],
+        "samples": 1
+    },
+    {
+        "path": "automation/TaskManager.py",
+        "line": 32,
+        "func_name": "load_default_params",
+        "type_comments": [
+            "(int) -> Tuple[Dict[str, str], List[Dict[str, Union[bool, str]]]]"
+        ],
+        "samples": 1
+    },
+    {
+        "path": "automation/TaskManager.py",
+        "line": 54,
+        "func_name": "TaskManager",
+        "type_comments": [
+            "() -> None"
+        ],
+        "samples": 1
+    },
+    {
+        "path": "automation/TaskManager.py",
+        "line": 64,
+        "func_name": "TaskManager.__init__",
+        "type_comments": [
+            "(Dict[str, str], List[Dict[str, Union[bool, str]]], bool, Dict) -> None"
+        ],
+        "samples": 1
+    },
+    {
+        "path": "automation/TaskManager.py",
+        "line": 164,
+        "func_name": "TaskManager._initialize_browsers",
+        "type_comments": [
+            "(List[Dict[str, Union[bool, str]]]) -> List[automation.BrowserManager.Browser]"
+        ],
+        "samples": 1
+    },
+    {
+        "path": "automation/TaskManager.py",
+        "line": 175,
+        "func_name": "TaskManager._launch_browsers",
+        "type_comments": [
+            "() -> None"
+        ],
+        "samples": 1
+    },
+    {
+        "path": "automation/TaskManager.py",
+        "line": 190,
+        "func_name": "TaskManager._manager_watchdog",
+        "type_comments": [
+            "() -> None"
+        ],
+        "samples": 1
+    },
+    {
+        "path": "automation/TaskManager.py",
+        "line": 236,
+        "func_name": "TaskManager._launch_aggregators",
+        "type_comments": [
+            "() -> None"
+        ],
+        "samples": 1
+    },
+    {
+        "path": "automation/TaskManager.py",
+        "line": 256,
+        "func_name": "TaskManager._shutdown_manager",
+        "type_comments": [
+            "(bool) -> None"
+        ],
+        "samples": 1
+    },
+    {
+        "path": "automation/TaskManager.py",
+        "line": 282,
+        "func_name": "TaskManager._check_failure_status",
+        "type_comments": [
+            "() -> None"
+        ],
+        "samples": 3
+    },
+    {
+        "path": "automation/TaskManager.py",
+        "line": 312,
+        "func_name": "TaskManager._start_thread",
+        "type_comments": [
+            "(automation.BrowserManager.Browser, automation.CommandSequence.CommandSequence) -> threading.Thread"
+        ],
+        "samples": 3
+    },
+    {
+        "path": "automation/TaskManager.py",
+        "line": 347,
+        "func_name": "TaskManager._issue_command",
+        "type_comments": [
+            "(automation.BrowserManager.Browser, automation.CommandSequence.CommandSequence) -> pyannotate_runtime.collect_types.UnknownType",
+            "(automation.BrowserManager.Browser, automation.CommandSequence.CommandSequence) -> None"
+        ],
+        "samples": 3
+    },
+    {
+        "path": "automation/TaskManager.py",
+        "line": 488,
+        "func_name": "TaskManager.execute_command_sequence",
+        "type_comments": [
+            "(automation.CommandSequence.CommandSequence, None) -> None"
+        ],
+        "samples": 3
+    },
+    {
+        "path": "automation/TaskManager.py",
+        "line": 565,
+        "func_name": "TaskManager.close",
+        "type_comments": [
+            "() -> None"
+        ],
+        "samples": 1
+    },
+    {
+        "path": "automation/utilities/domain_utils.py",
+        "line": 29,
+        "func_name": "load_psl",
+        "type_comments": [
+            "(function) -> function"
+        ],
+        "samples": 2
+    },
+    {
+        "path": "automation/utilities/multiprocess_utils.py",
+        "line": 34,
+        "func_name": "Process",
+        "type_comments": [
+            "() -> None"
+        ],
+        "samples": 1
+    },
+    {
+        "path": "automation/utilities/multiprocess_utils.py",
+        "line": 36,
+        "func_name": "Process.__init__",
+        "type_comments": [
+            "() -> None"
+        ],
+        "samples": 4
+    },
+    {
+        "path": "automation/utilities/platform_utils.py",
+        "line": 80,
+        "func_name": "get_version",
+        "type_comments": [
+            "() -> Tuple[bytes, bytes]"
+        ],
+        "samples": 1
+    },
+    {
+        "path": "automation/utilities/platform_utils.py",
+        "line": 101,
+        "func_name": "get_configuration_string",
+        "type_comments": [
+            "(Dict[str, str], List[Dict[str, Union[bool, str]]], Tuple[bytes, bytes]) -> str"
+        ],
+        "samples": 1
+    }
+]

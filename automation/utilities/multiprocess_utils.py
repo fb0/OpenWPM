@@ -1,6 +1,7 @@
 import logging
 import sys
 import traceback
+from typing import Any
 
 import multiprocess as mp
 
@@ -33,7 +34,7 @@ def parse_traceback_for_sentry(tb):
 
 class Process(mp.Process):
     """Wrapper Process class that includes exception logging"""
-    def __init__(self, *args, **kwargs):
+    def __init__(self, *args: Any, **kwargs: Any) -> None:
         mp.Process.__init__(self, *args, **kwargs)
         self.logger = logging.getLogger('openwpm')
 

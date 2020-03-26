@@ -4,6 +4,7 @@ import os
 import tempfile
 from functools import wraps
 from ipaddress import ip_address
+from typing import Callable
 from urllib.parse import urlparse
 
 from publicsuffix import PublicSuffixList, fetch
@@ -26,7 +27,7 @@ def get_psl():
     return PublicSuffixList(psl_cache)
 
 
-def load_psl(function):
+def load_psl(function: Callable) -> Callable:
     @wraps(function)
     def wrapper(*args, **kwargs):
         if 'psl' not in kwargs:

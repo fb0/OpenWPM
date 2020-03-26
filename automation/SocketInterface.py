@@ -4,6 +4,7 @@ import struct
 import threading
 import traceback
 from queue import Queue
+from typing import Any, Tuple, Union
 
 import dill
 
@@ -17,17 +18,17 @@ class serversocket:
     from client sockets to a central queue
     """
 
-    def __init__(self, name=None, verbose=False):
+    def __init__(self, name: str = None, verbose: bool = False) -> None:
         self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.sock.bind(('localhost', 0))
         self.sock.listen(10)  # queue a max of n connect requests
         self.verbose = verbose
         self.name = name
-        self.queue = Queue()
+        self.queue: Queue = Queue()
         if self.verbose:
             print("Server bound to: " + str(self.sock.getsockname()))
 
-    def start_accepting(self):
+    def start_accepting(self) -> None:
         """ Start the listener thread """
         thread = threading.Thread(target=self._accept, args=())
         thread.daemon = True  # stops from blocking shutdown
@@ -50,7 +51,8 @@ class serversocket:
                       "on a closed socket")
                 return
 
-    def _handle_conn(self, client, address):
+    def _handle_conn(self, client: socket.socket,
+                     address: Tuple[str, int]) -> Any:
         """
         Receive messages and pass to queue. Messages are prefixed with
         a 4-byte integer to specify the message length and 1-byte character
@@ -67,8 +69,8 @@ class serversocket:
                   (threading.current_thread(), address))
         try:
             while True:
-                msg = self.receive_msg(client, 5)
-                msglen, serialization = struct.unpack('>Lc', msg)
+                header = self.receive_msg(client, 5)
+                msglen, serialization = struct.unpack('>Lc', header)
                 if self.verbose:
                     print("Received message, length %d, serialization %r"
                           % (msglen, serialization))
@@ -85,16 +87,16 @@ class serversocket:
                             print("Unrecognized serialization type: %r"
                                   % serialization)
                             continue
-                    except (UnicodeDecodeError, ValueError) as e:
-                        print("Error de-serializing message: %s \n %s" % (
-                            msg, traceback.format_exc(e)))
+                    except (UnicodeDecodeError, ValueError):
+                        print("Error de-serializing message: %s \n %s",
+                              msg, traceback.format_exc())
                         continue
                 self.queue.put(msg)
         except RuntimeError:
             if self.verbose:
                 print("Client socket: " + str(address) + " closed")
 
-    def receive_msg(self, client, msglen):
+    def receive_msg(self, client: socket.socket, msglen: int) -> bytes:
         msg = b''
         while len(msg) < msglen:
             chunk = client.recv(msglen - len(msg))
@@ -103,14 +105,15 @@ class serversocket:
             msg = msg + chunk
         return msg
 
-    def close(self):
+    def close(self) -> None:
         self.sock.close()
 
 
 class clientsocket:
     """A client socket for sending messages"""
 
-    def __init__(self, serialization='json', verbose=False):
+    def __init__(self, serialization: str = 'json',
+                 verbose: bool = False) -> None:
         """ `serialization` specifies the type of serialization to use for
         non-string messages. Supported formats:
             * 'json' uses the json module. Cross-language support. (default)
@@ -123,12 +126,12 @@ class clientsocket:
         self.serialization = serialization
         self.verbose = verbose
 
-    def connect(self, host, port):
+    def connect(self, host: str, port: int) -> None:
         if self.verbose:
             print("Connecting to: %s:%i" % (host, port))
         self.sock.connect((host, port))
 
-    def send(self, msg):
+    def send(self, msg: Any) -> None:
         """
         Sends an arbitrary python object to the connected socket. Serializes
         using dill if not string, and prepends msg len (4-bytes) and
@@ -161,13 +164,13 @@ class clientsocket:
                 raise RuntimeError("socket connection broken")
             totalsent = totalsent + sent
 
-    def close(self):
+    def close(self) -> None:
         self.sock.close()
 
 
 def main():
     import sys
-
+    sock: Union[serversocket, clientsocket]
     # Just for testing
     if sys.argv[1] == 's':
         sock = serversocket(verbose=True)

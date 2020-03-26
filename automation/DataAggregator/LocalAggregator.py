@@ -6,6 +6,7 @@ import sqlite3
 import time
 from sqlite3 import (IntegrityError, InterfaceError, OperationalError,
                      ProgrammingError)
+from typing import Any, Dict, List
 
 import plyvel
 
@@ -179,7 +180,8 @@ class LocalAggregator(BaseAggregator):
     If content saving is enabled, we write page content to a LevelDB database.
     """
 
-    def __init__(self, manager_params, browser_params):
+    def __init__(self, manager_params: Dict[str, Any],
+                 browser_params: List[Dict[str, Any]]) -> None:
         super(LocalAggregator, self).__init__(manager_params, browser_params)
         db_path = self.manager_params['database_name']
         if not os.path.exists(manager_params['data_directory']):
@@ -197,13 +199,13 @@ class LocalAggregator(BaseAggregator):
                 self.ldb_enabled = True
                 break
 
-    def _create_tables(self):
+    def _create_tables(self) -> None:
         """Create tables (if this is a new database)"""
         with open(SCHEMA_FILE, 'r') as f:
             self.db.executescript(f.read())
         self.db.commit()
 
-    def _get_last_used_ids(self):
+    def _get_last_used_ids(self) -> None:
         """Query max ids from database"""
         self.cur.execute("SELECT MAX(visit_id) from site_visits")
         last_visit_id = self.cur.fetchone()[0]
@@ -217,7 +219,8 @@ class LocalAggregator(BaseAggregator):
             last_crawl_id = 0
         self.current_crawl_id = last_crawl_id
 
-    def save_configuration(self, openwpm_version, browser_version):
+    def save_configuration(self, openwpm_version: bytes,
+                           browser_version: bytes) -> None:
         """Save configuration details for this crawl to the database"""
 
         # Record task details
@@ -241,22 +244,22 @@ class LocalAggregator(BaseAggregator):
             )
         self.db.commit()
 
-    def get_next_visit_id(self):
+    def get_next_visit_id(self) -> int:
         """Returns the next visit id"""
         self.current_visit_id += 1
         return self.current_visit_id
 
-    def get_next_crawl_id(self):
+    def get_next_crawl_id(self) -> int:
         """Returns the next crawl id"""
         self.current_crawl_id += 1
         return self.current_crawl_id
 
-    def launch(self):
+    def launch(self) -> None:
         """Launch the aggregator listener process"""
         super(LocalAggregator, self).launch(
             listener_process_runner, self.ldb_enabled)
 
-    def shutdown(self):
+    def shutdown(self) -> None:
         """ Terminates the aggregator"""
         self.db.close()
         super(LocalAggregator, self).shutdown()

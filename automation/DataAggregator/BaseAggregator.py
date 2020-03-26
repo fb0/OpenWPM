@@ -3,6 +3,7 @@ import logging
 import queue
 import threading
 import time
+from typing import Any, Callable, Dict, List
 
 from multiprocess import Queue
 
@@ -119,7 +120,8 @@ class BaseAggregator(object):
         List of browser configuration dictionaries"""
     __metaclass__ = abc.ABCMeta
 
-    def __init__(self, manager_params, browser_params):
+    def __init__(self, manager_params: Dict[str, Any],
+                 browser_params: List[Dict[str, Any]]) -> None:
         self.manager_params = manager_params
         self.browser_params = browser_params
         self.listener_address = None
@@ -142,7 +144,7 @@ class BaseAggregator(object):
     def get_next_crawl_id(self):
         """Return a unique crawl ID used as a key for a browser instance"""
 
-    def get_most_recent_status(self):
+    def get_most_recent_status(self) -> int:
         """Return the most recent queue size sent from the listener process"""
 
         # Block until we receive the first status update
@@ -163,7 +165,7 @@ class BaseAggregator(object):
 
         return self._last_status
 
-    def get_status(self):
+    def get_status(self) -> int:
         """Get listener process status. If the status queue is empty, block."""
         try:
             self._last_status = self.status_queue.get(
@@ -176,7 +178,7 @@ class BaseAggregator(object):
             )
         return self._last_status
 
-    def launch(self, listener_process_runner, *args):
+    def launch(self, listener_process_runner: Callable, *args: tuple) -> None:
         """Launch the aggregator listener process"""
         args = (self.manager_params, self.status_queue,
                 self.shutdown_queue) + args
@@ -188,7 +190,7 @@ class BaseAggregator(object):
         self.listener_process.start()
         self.listener_address = self.status_queue.get()
 
-    def shutdown(self):
+    def shutdown(self) -> None:
         """ Terminate the aggregator listener process"""
         self.logger.debug(
             "Sending the shutdown signal to the %s listener process..." %

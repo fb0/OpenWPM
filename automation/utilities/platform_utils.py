@@ -5,6 +5,7 @@ import subprocess
 from collections import OrderedDict
 from copy import deepcopy
 from sys import platform
+from typing import Any, Dict, List, Tuple
 
 from tabulate import tabulate
 
@@ -77,7 +78,7 @@ def get_geckodriver_exec_path():
     return geckodriver_executable_path
 
 
-def get_version():
+def get_version() -> Tuple[bytes, bytes]:
     """Return OpenWPM version tag/current commit and Firefox version """
     try:
         openwpm = subprocess.check_output(
@@ -98,7 +99,9 @@ def get_version():
     return openwpm, ff
 
 
-def get_configuration_string(manager_params, browser_params, versions):
+def get_configuration_string(manager_params: Dict[str, Any],
+                             browser_params: List[Dict[str, Any]],
+                             versions: Tuple[bytes, bytes]) -> str:
     """Construct a well-formatted string for {manager,browser}params
 
     Constructs a pretty printed string of all parameters. The config

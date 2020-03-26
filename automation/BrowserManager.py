@@ -72,15 +72,15 @@ class Browser:
 
         self.logger = logging.getLogger('openwpm')
 
-    def ready(self):
+    def ready(self) -> bool:
         """ return if the browser is ready to accept a command """
         return self.command_thread is None or \
             not self.command_thread.is_alive()
 
-    def set_visit_id(self, visit_id):
+    def set_visit_id(self, visit_id: int) -> None:
         self.curr_visit_id = visit_id
 
-    def launch_browser_manager(self):
+    def launch_browser_manager(self) -> bool:
         """
         sets up the BrowserManager and gets the process id, browser pid and,
         if applicable, screen pid. loads associated user profile if necessary

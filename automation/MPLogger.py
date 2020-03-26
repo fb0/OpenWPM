@@ -10,6 +10,7 @@ import sys
 import threading
 import time
 from queue import Empty as EmptyQueue
+from typing import Any, Dict, List, Union
 
 import dill
 import sentry_sdk
@@ -96,11 +97,11 @@ class ClientSocketHandler(logging.handlers.SocketHandler):
 class MPLogger(object):
     """Configure OpenWPM logging across processes"""
 
-    def __init__(self, log_file, crawl_context=None,
-                 log_level_console=logging.INFO,
-                 log_level_file=logging.DEBUG,
-                 log_level_sentry_breadcrumb=logging.DEBUG,
-                 log_level_sentry_event=logging.ERROR):
+    def __init__(self, log_file: str, crawl_context: Dict[str, str] = None,
+                 log_level_console: int = logging.INFO,
+                 log_level_file: int = logging.DEBUG,
+                 log_level_sentry_breadcrumb: int = logging.DEBUG,
+                 log_level_sentry_event: int = logging.ERROR) -> None:
         self._crawl_context = crawl_context
         self._log_level_console = log_level_console
         self._log_level_file = log_level_file
@@ -117,7 +118,7 @@ class MPLogger(object):
         if self._sentry_dsn:
             self._initialize_sentry()
 
-    def _initialize_loggers(self):
+    def _initialize_loggers(self) -> None:
         """Set up console logging and serialized file logging.
 
         The logger and socket handler are set to log at the logging.DEBUG level
@@ -210,7 +211,7 @@ class MPLogger(object):
                      self._crawl_context.get('s3_directory', 'UNKNOWN'))
                 )
 
-    def _start_listener(self):
+    def _start_listener(self) -> None:
         """Start listening socket for remote logs from extension"""
         socket = serversocket(name="loggingserver")
         self._status_queue.put(socket.sock.getsockname())
@@ -236,13 +237,13 @@ class MPLogger(object):
             except EmptyQueue:
                 pass
 
-    def _process_record(self, obj):
+    def _process_record(self, obj: Union[Dict[str, Any], List[str]]) -> None:
         if len(obj) == 2 and obj[0] == 'EXT':
             self._handle_extension_log(obj)
         else:
             self._handle_serialized_writes(obj)
 
-    def _handle_extension_log(self, obj):
+    def _handle_extension_log(self, obj: List[str]) -> None:
         """Pass messages received from the extension to logger"""
         obj = json.loads(obj[1])
         record = logging.LogRecord(
@@ -258,7 +259,7 @@ class MPLogger(object):
         logger = logging.getLogger('openwpm')
         logger.handle(record)
 
-    def _handle_serialized_writes(self, obj):
+    def _handle_serialized_writes(self, obj: Dict[str, Any]) -> None:
         """Handle records that must be serialized to the main process
 
         This is currently records that are written to a file on disk
@@ -276,7 +277,7 @@ class MPLogger(object):
             if record.levelno >= self._event_handler.level:
                 self._event_handler.handle(record)
 
-    def close(self):
+    def close(self) -> None:
         self._status_queue.put("SHUTDOWN")
         self._status_queue.join()
         self._listener.join()

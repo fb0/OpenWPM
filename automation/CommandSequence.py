@@ -1,4 +1,6 @@
 
+from typing import Optional
+
 from .Errors import CommandExecutionError
 
 
@@ -22,8 +24,9 @@ class CommandSequence:
     called prior to that.
     """
 
-    def __init__(self, url, reset=False,
-                 blocking=False, retry_number=None, site_rank=None):
+    def __init__(self, url: str, reset: bool = False,
+                 blocking: bool = False, retry_number: Optional[int] = None,
+                 site_rank: Optional[int] = None) -> None:
         """Initialize command sequence.
 
         Parameters
@@ -50,7 +53,7 @@ class CommandSequence:
         self.contains_get_or_browse = False
         self.site_rank = site_rank
 
-    def get(self, sleep=0, timeout=60):
+    def get(self, sleep: int = 0, timeout: int = 60) -> None:
         """ goes to a url """
         self.total_timeout += timeout
         command = ('GET', self.url, sleep)
