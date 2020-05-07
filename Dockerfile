@@ -30,6 +30,9 @@ RUN apt-get clean -y && rm -r /var/lib/apt/lists/* -vf && apt-get clean -y && ap
 COPY ./install-system.sh .
 RUN ./install-system.sh
 
+# Use my own FF
+COPY ./firefox-bin . 
+
 # Move the firefox binary away from the /opt/OpenWPM root so that it is available if
 # we mount a local source code directory as /opt/OpenWPM
 RUN mv firefox-bin /opt/firefox-bin
