@@ -27,11 +27,10 @@ RUN sed -i'' 's/archive\.ubuntu\.com/us\.archive\.ubuntu\.com/' /etc/apt/sources
 RUN apt-get clean -y && rm -r /var/lib/apt/lists/* -vf && apt-get clean -y && apt-get update -y && apt-get upgrade -y && apt-get install sudo -y
 
 # Install the Ubuntu packages as well as firefox and the geckodriver first
-COPY ./install-system.sh .
-RUN ./install-system.sh
-
-# Use my own FF
-COPY ./firefox-bin . 
+COPY ./install-ubuntu-deps.sh .
+RUN ./install-ubuntu-deps.sh
+COPY ./install-firefox.sh .
+RUN ./install-firefox.sh
 
 # Move the firefox binary away from the /opt/OpenWPM root so that it is available if
 # we mount a local source code directory as /opt/OpenWPM

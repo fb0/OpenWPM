@@ -1,7 +1,9 @@
 #!/bin/bash
 set -e
 
-./install-system.sh
+./install-ubuntu-deps.sh
+
+./install-firefox.sh
 
 ./install-pip-and-packages.sh
 
