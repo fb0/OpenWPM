@@ -8,6 +8,7 @@ import queue
 import random
 import time
 from collections import defaultdict
+from typing import Any, DefaultDict, Dict, List, MutableSet, Optional
 
 import boto3
 import pandas as pd
@@ -18,7 +19,9 @@ from botocore.client import Config
 from botocore.exceptions import ClientError, EndpointConnectionError
 from pyarrow.filesystem import S3FSWrapper  # noqa
 
-from .BaseAggregator import RECORD_TYPE_CONTENT, BaseAggregator, BaseListener
+from .BaseAggregator import (RECORD_TYPE_CONTENT, RECORD_TYPE_CREATE,
+                             RECORD_TYPE_SPECIAL, BaseAggregator, BaseListener,
+                             BaseParams)
 from .parquet_schema import PQ_SCHEMAS
 
 CACHE_SIZE = 500
@@ -34,11 +37,11 @@ S3_CONFIG_KWARGS = {
 S3_CONFIG = Config(**S3_CONFIG_KWARGS)
 
 
-def listener_process_runner(
-        manager_params, status_queue, shutdown_queue, instance_id):
+def listener_process_runner(base_params: BaseParams,
+                            manager_params: Dict[str, Any],
+                            instance_id: int) -> None:
     """S3Listener runner. Pass to new process"""
-    listener = S3Listener(
-        status_queue, shutdown_queue, manager_params, instance_id)
+    listener = S3Listener(base_params, manager_params, instance_id)
     listener.startup()
 
     while True:
@@ -65,15 +68,22 @@ class S3Listener(BaseListener):
     ./parquet_schema.py
     """
 
-    def __init__(
-            self, status_queue, shutdown_queue, manager_params, instance_id):
+    def __init__(self,
+                 base_params: BaseParams,
+                 manager_params: Dict[str, Any],
+                 instance_id: int) -> None:
         self.dir = manager_params['s3_directory']
-        self.browser_map = dict()  # maps crawl_id to visit_id
-        self._records = dict()  # maps visit_id and table to records
-        self._batches = dict()  # maps table_name to a list of batches
+        self._records: Dict[int, DefaultDict[str, List[Any]]] =\
+            dict()  # maps visit_id and table to records
+        self._batches: DefaultDict[str, List[pa.RecordBatch]] = \
+            defaultdict(list)  # maps table_name to a list of batches
+        self._unsaved_visit_ids: MutableSet[int] = \
+            set()
+
         self._instance_id = instance_id
         self._bucket = manager_params['s3_bucket']
-        self._s3_content_cache = set()  # cache of filenames already uploaded
+        self._s3_content_cache: MutableSet[str] = \
+            set()  # cache of filenames already uploaded
         self._s3 = boto3.client('s3', config=S3_CONFIG)
         self._s3_resource = boto3.resource('s3', config=S3_CONFIG)
         self._fs = s3fs.S3FileSystem(
@@ -82,11 +92,11 @@ class S3Listener(BaseListener):
         )
         self._s3_bucket_uri = 's3://%s/%s/visits/%%s' % (
             self._bucket, self.dir)
-        self._last_record_received = None  # time last record was received
-        super(S3Listener, self).__init__(
-            status_queue, shutdown_queue, manager_params)
+        # time last record was received
+        self._last_record_received: Optional[float] = None
+        super(S3Listener, self).__init__(*base_params)
 
-    def _get_records(self, visit_id):
+    def _get_records(self, visit_id: int) -> DefaultDict[str, List[Any]]:
         """Get the RecordBatch corresponding to `visit_id`"""
         if visit_id not in self._records:
             self._records[visit_id] = defaultdict(list)
@@ -103,14 +113,12 @@ class S3Listener(BaseListener):
         data['instance_id'] = self._instance_id
         records[table].append(data)
 
-    def _create_batch(self, visit_id):
+    def _create_batch(self, visit_id: int) -> None:
         """Create record batches for all records from `visit_id`"""
         if visit_id not in self._records:
             # The batch for this `visit_id` was already created, skip
             return
         for table_name, data in self._records[visit_id].items():
-            if table_name not in self._batches:
-                self._batches[table_name] = list()
             try:
                 df = pd.DataFrame(data)
                 batch = pa.RecordBatch.from_pandas(
@@ -127,7 +135,6 @@ class S3Listener(BaseListener):
                     % table_name, exc_info=True
                 )
                 pass
-
             # We construct a special index file from the site_visits data
             # to make it easier to query the dataset
             if table_name == 'site_visits':
@@ -137,8 +144,9 @@ class S3Listener(BaseListener):
                     self._batches[SITE_VISITS_INDEX].append(item)
 
         del self._records[visit_id]
+        self._unsaved_visit_ids.add(visit_id)
 
-    def _exists_on_s3(self, filename):
+    def _exists_on_s3(self, filename: str) -> bool:
         """Check if `filename` already exists on S3"""
         # Check local filename cache
         if filename.split('/', 1)[1] in self._s3_content_cache:
@@ -200,13 +208,17 @@ class S3Listener(BaseListener):
 
     def _send_to_s3(self, force=False):
         """Copy in-memory batches to s3"""
+        should_send = force
+        for batches in self._batches.values():
+            if len(batches) > CACHE_SIZE:
+                should_send = True
+        if not should_send:
+            return
+
         for table_name, batches in self._batches.items():
-            if not force and len(batches) <= CACHE_SIZE:
-                continue
             if table_name == SITE_VISITS_INDEX:
                 out_str = '\n'.join([json.dumps(x) for x in batches])
-                if not isinstance(out_str, bytes):
-                    out_str = out_str.encode('utf-8')
+                out_str = out_str.encode('utf-8')
                 fname = '%s/site_index/instance-%s-%s.json.gz' % (
                     self.dir, self._instance_id,
                     hashlib.md5(out_str).hexdigest()
@@ -230,7 +242,11 @@ class S3Listener(BaseListener):
                         exc_info=True
                     )
                     pass
+            # can't del here because that would modify batches
             self._batches[table_name] = list()
+        for visit_id in self._unsaved_visit_ids:
+            self.mark_visit_complete(visit_id)
+        self._unsaved_visit_ids = set()
 
     def save_batch_if_past_timeout(self):
         """Save the current batch of records if no new data has been received.
@@ -256,33 +272,14 @@ class S3Listener(BaseListener):
             return
         self._last_record_received = time.time()
         table, data = record
-        if table == "create_table":  # drop these statements
+        if table == RECORD_TYPE_CREATE:  # drop these statements
             return
-        elif table == RECORD_TYPE_CONTENT:
+        if table == RECORD_TYPE_CONTENT:
             self.process_content(record)
             return
-
-        # All data records should be keyed by the crawler and site visit
-        try:
-            visit_id = data['visit_id']
-        except KeyError:
-            self.logger.error("Record for table %s has no visit id" % table)
-            self.logger.error(json.dumps(data))
+        if table == RECORD_TYPE_SPECIAL:
+            self.handle_special(data)
             return
-        try:
-            crawl_id = data['crawl_id']
-        except KeyError:
-            self.logger.error("Record for table %s has no crawl id" % table)
-            self.logger.error(json.dumps(data))
-            return
-
-        # Check if the browser for this record has moved on to a new visit
-        if crawl_id not in self.browser_map:
-            self.browser_map[crawl_id] = visit_id
-        elif self.browser_map[crawl_id] != visit_id:
-            self._create_batch(self.browser_map[crawl_id])
-            self._send_to_s3()
-            self.browser_map[crawl_id] = visit_id
 
         # Convert data to text type
         for k, v in data.items():
@@ -295,7 +292,7 @@ class S3Listener(BaseListener):
                 data[k] = json.dumps(v)
 
         # Save record to disk
-        self._write_record(table, data, visit_id)
+        self._write_record(table, data, data["visit_id"])
 
     def process_content(self, record):
         """Upload page content `record` to S3"""
@@ -313,9 +310,16 @@ class S3Listener(BaseListener):
     def drain_queue(self):
         """Process remaining records in queue and sync final files to S3"""
         super(S3Listener, self).drain_queue()
-        for visit_id in self.browser_map.values():
+        # can't directly iterate because _create_batch modifies records
+        visit_ids = list(self._records.keys())
+        for visit_id in visit_ids:
             self._create_batch(visit_id)
         self._send_to_s3(force=True)
+
+    def run_visit_completion_tasks(self, visit_id: int,
+                                   is_shutdown: bool = False):
+        self._create_batch(visit_id)
+        self._send_to_s3(force=is_shutdown)
 
 
 class S3Aggregator(BaseAggregator):
@@ -371,9 +375,8 @@ class S3Aggregator(BaseAggregator):
         out['browser_version'] = str(browser_version)
         out['browser_params'] = self.browser_params
         out_str = json.dumps(out)
-        if not isinstance(out_str, bytes):
-            out_str = out_str.encode('utf-8')
-        out_f = io.BytesIO(out_str)
+        out_bytes = out_str.encode('utf-8')
+        out_f = io.BytesIO(out_bytes)
 
         # Upload to S3 and delete local copy
         try:
@@ -403,4 +406,4 @@ class S3Aggregator(BaseAggregator):
     def launch(self):
         """Launch the aggregator listener process"""
         super(S3Aggregator, self).launch(
-            listener_process_runner, self._instance_id)
+            listener_process_runner, self.manager_params, self._instance_id)

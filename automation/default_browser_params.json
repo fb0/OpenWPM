@@ -10,10 +10,9 @@
 
     "random_attributes": false,
     "bot_mitigation": false,
-    "disable_flash": true,
     "profile_tar": null,
     "profile_archive_dir": null,
-    "headless": false,
+    "display_mode": "native",
     "browser": "firefox",
     "prefs": {},
 

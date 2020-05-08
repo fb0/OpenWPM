@@ -6,11 +6,12 @@ import sqlite3
 import time
 from sqlite3 import (IntegrityError, InterfaceError, OperationalError,
                      ProgrammingError)
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Tuple, Union
 
 import plyvel
 
-from .BaseAggregator import RECORD_TYPE_CONTENT, BaseAggregator, BaseListener
+from .BaseAggregator import (RECORD_TYPE_CONTENT, RECORD_TYPE_CREATE,
+                             RECORD_TYPE_SPECIAL, BaseAggregator, BaseListener)
 
 SQL_BATCH_SIZE = 1000
 LDB_BATCH_SIZE = 100
@@ -19,11 +20,9 @@ SCHEMA_FILE = os.path.join(os.path.dirname(__file__), 'schema.sql')
 LDB_NAME = 'content.ldb'
 
 
-def listener_process_runner(
-        manager_params, status_queue, shutdown_queue, ldb_enabled):
+def listener_process_runner(base_params, manager_params, ldb_enabled):
     """LocalListener runner. Pass to new process"""
-    listener = LocalListener(
-        status_queue, shutdown_queue, manager_params, ldb_enabled)
+    listener = LocalListener(base_params, manager_params, ldb_enabled)
     listener.startup()
 
     while True:
@@ -50,8 +49,7 @@ def listener_process_runner(
 class LocalListener(BaseListener):
     """Listener that interfaces with a local SQLite database."""
 
-    def __init__(
-            self, status_queue, shutdown_queue, manager_params, ldb_enabled):
+    def __init__(self, base_params, manager_params, ldb_enabled):
         db_path = manager_params['database_name']
         self.db = sqlite3.connect(db_path, check_same_thread=False)
         self.cur = self.db.cursor()
@@ -67,8 +65,8 @@ class LocalListener(BaseListener):
         self._ldb_commit_time = 0
         self._sql_counter = 0
         self._sql_commit_time = 0
-        super(LocalListener, self).__init__(
-            status_queue, shutdown_queue, manager_params)
+
+        super(LocalListener, self).__init__(*base_params)
 
     def _generate_insert(self, table, data):
         """Generate a SQL query from `record`"""
@@ -85,27 +83,37 @@ class LocalListener(BaseListener):
         statement = statement + ") " + value_str + ")"
         return statement, values
 
-    def process_record(self, record):
+    def process_record(self, record: Tuple[str, Union[str, Dict[str, Any]]]):
         """Add `record` to database"""
+
         if len(record) != 2:
             self.logger.error("Query is not the correct length")
             return
-        if record[0] == "create_table":
-            self.cur.execute(record[1])
+
+        table, data = record
+        if table == RECORD_TYPE_CREATE:
+            assert isinstance(data, str)
+            self.cur.execute(data)
             self.db.commit()
             return
-        elif record[0] == RECORD_TYPE_CONTENT:
+        if table == RECORD_TYPE_CONTENT:
             self.process_content(record)
             return
+
+        assert isinstance(data, dict)
+
+        if table == RECORD_TYPE_SPECIAL:
+            self.handle_special(data)
+            return
+
         statement, args = self._generate_insert(
-            table=record[0], data=record[1])
+            table=table, data=data)
         for i in range(len(args)):
             if isinstance(args[i], bytes):
                 args[i] = str(args[i], errors='ignore')
             elif callable(args[i]):
                 args[i] = str(args[i])
             elif type(args[i]) == dict:
-                print(args[i])
                 args[i] = json.dumps(args[i])
         try:
             self.cur.execute(statement, args)
@@ -118,17 +126,18 @@ class LocalListener(BaseListener):
 
     def process_content(self, record):
         """Add page content to the LevelDB database"""
-        if record[0] != RECORD_TYPE_CONTENT:
+        table, data = record
+        if table != RECORD_TYPE_CONTENT:
             raise ValueError(
                 "Incorrect record type passed to `process_content`. Expected "
                 "record of type `%s`, received `%s`." % (
-                    RECORD_TYPE_CONTENT, record[0])
+                    RECORD_TYPE_CONTENT, table)
             )
         if not self.ldb_enabled:
             raise RuntimeError(
                 "Attempted to save page content but the LevelDB content "
                 "database is not enabled.")
-        content, content_hash = record[1]
+        content, content_hash = data
         content = base64.b64decode(content)
         content_hash = str(content_hash).encode('ascii')
         if self.ldb.get(content_hash) is not None:
@@ -162,7 +171,13 @@ class LocalListener(BaseListener):
             self._ldb_counter = 0
             self._ldb_commit_time = time.time()
 
+    def run_visit_completion_tasks(self, visit_id: int,
+                                   is_shutdown: bool = False):
+        self.mark_visit_complete(visit_id)
+
     def shutdown(self):
+        for visit_id in self.browser_map.values():
+            self.mark_visit_complete(visit_id)
         self.db.commit()
         self.db.close()
         if self.ldb_enabled:
@@ -257,7 +272,8 @@ class LocalAggregator(BaseAggregator):
     def launch(self) -> None:
         """Launch the aggregator listener process"""
         super(LocalAggregator, self).launch(
-            listener_process_runner, self.ldb_enabled)
+            listener_process_runner, self.manager_params,
+            self.ldb_enabled)
 
     def shutdown(self) -> None:
         """ Terminates the aggregator"""

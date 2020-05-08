@@ -18,7 +18,6 @@ from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.support.ui import WebDriverWait
 
 from ..SocketInterface import clientsocket
-from .utils.lso import get_flash_cookies
 from .utils.webdriver_utils import (execute_in_all_frames,
                                     execute_script_with_retry, get_intra_links,
                                     is_displayed, scroll_down,
@@ -106,7 +105,7 @@ def tab_restart_browser(webdriver):
 
 
 def get_website(url, sleep, visit_id, webdriver,
-                browser_params, extension_socket):
+                browser_params, extension_socket: clientsocket):
     """
     goes to <url> using the given <webdriver> instance
     """
@@ -171,31 +170,6 @@ def browse_website(url, num_links, sleep, visit_id, webdriver,
             wait_until_loaded(webdriver, 300)
         except Exception:
             pass
-
-
-def dump_flash_cookies(start_time, visit_id, webdriver, browser_params,
-                       manager_params):
-    """ Save newly changed Flash LSOs to database
-
-    We determine which LSOs to save by the `start_time` timestamp.
-    This timestamp should be taken prior to calling the `get` for
-    which creates these changes.
-    """
-    # Set up a connection to DataAggregator
-    tab_restart_browser(webdriver)  # kills window to avoid stray requests
-    sock = clientsocket()
-    sock.connect(*manager_params['aggregator_address'])
-
-    # Flash cookies
-    flash_cookies = get_flash_cookies(start_time)
-    for cookie in flash_cookies:
-        data = cookie._asdict()
-        data["crawl_id"] = browser_params["crawl_id"]
-        data["visit_id"] = visit_id
-        sock.send(("flash_cookies", data))
-
-    # Close connection to db
-    sock.close()
 
 
 def save_screenshot(visit_id, crawl_id, driver, manager_params, suffix=''):
@@ -368,3 +342,9 @@ def recursive_dump_page_source(visit_id, driver, manager_params, suffix=''):
 
     with gzip.GzipFile(outfile, 'wb') as f:
         f.write(json.dumps(page_source).encode('utf-8'))
+
+
+def finalize(visit_id: int, extension_socket: clientsocket) -> None:
+    """ Informs the extension that a visit is done """
+    msg = {"action": "Finalize", "visit_id": visit_id}
+    extension_socket.send(msg)

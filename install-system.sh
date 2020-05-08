@@ -1,59 +1,24 @@
 #!/bin/bash
 set -e
 
-if [[ $# -gt 1 ]]; then
-    echo "Usage: install.sh [--flash | --no-flash]" >&2
+if [[ $# -gt 0 ]]; then
+    echo "Usage: install.sh" >&2
     exit 1
 fi
 
-if [[ $# -gt 0 ]]; then
-    case "$1" in
-        "--flash")
-            flash=true
-            ;;
-        "--no-flash")
-            flash=false
-            ;;
-        *)
-            echo "Usage: install.sh [--flash | --no-flash]" >&2
-            exit 1
-            ;;
-    esac
-else
-    echo "Would you like to install Adobe Flash Player? (Only required for crawls with Flash) [y,N]"
-    read -s -n 1 response
-    if [[ $response = "" ]] || [ $response == 'n' ] || [ $response == 'N' ]; then
-        flash=false
-        echo Not installing Adobe Flash Plugin
-    elif [ $response == 'y' ] || [ $response == 'Y' ]; then
-        flash=true
-        echo Installing Adobe Flash Plugin
-    else
-        echo Unrecognized response, exiting
-        exit 1
-    fi
-fi
-
-if [ "$flash" = true ]; then
-    sudo add-apt-repository "deb http://archive.canonical.com/ $(lsb_release -sc) partner"
-fi
 sudo apt-get update
 
-sudo apt-get install -y firefox htop git libxml2-dev libxslt-dev libffi-dev libssl-dev build-essential libboost-python-dev libleveldb-dev libjpeg-dev curl wget git bash vim
+sudo apt-get install -y firefox htop git libxml2-dev libxslt-dev libffi-dev libssl-dev build-essential libboost-python-dev libleveldb-dev libjpeg-dev curl wget git bash vim xvfb
 
 # For some versions of ubuntu, the package libleveldb1v5 isn't available. Use libleveldb1 instead.
 sudo apt-get install -y libleveldb1v5 || sudo apt-get install -y libleveldb1
-
-if [ "$flash" = true ]; then
-    sudo apt-get install -y adobe-flashplugin
-fi
 
 # Use the Unbranded build that corresponds to a specific Firefox version 
 # To upgrade:
 #    1. Go to: https://hg.mozilla.org/releases/mozilla-release/tags.
 #    2. Find the commit hash for the Firefox release version you'd like to upgrade to.
 #    3. Update the `TAG` variable below to that hash.
-TAG=25e0edbb0a613c3bf794c93ba3aa0985d29d5ef4
+TAG=6200ca9b300670ec069cdbf6e4f05e6a0bca46f1 # FIREFOX_75_0_RELEASE
 UNBRANDED_RELEASE_LINUX_BUILD="https://firefox-ci-tc.services.mozilla.com/api/index/v1/task/gecko.v2.mozilla-release.revision.$TAG.firefox.linux64-add-on-devel/artifacts/public/build/target.tar.bz2"
 wget "$UNBRANDED_RELEASE_LINUX_BUILD"
 tar jxf target.tar.bz2

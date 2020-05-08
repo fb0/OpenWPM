@@ -3,7 +3,7 @@ import logging
 import queue
 import threading
 import time
-from typing import Any, Callable, Dict, List
+from typing import Any, Callable, Dict, List, Tuple
 
 from multiprocess import Queue
 
@@ -11,10 +11,14 @@ from ..SocketInterface import serversocket
 from ..utilities.multiprocess_utils import Process
 
 RECORD_TYPE_CONTENT = 'page_content'
+RECORD_TYPE_SPECIAL = 'meta_information'
+RECORD_TYPE_CREATE = 'create_table'
 STATUS_TIMEOUT = 120  # seconds
 SHUTDOWN_SIGNAL = 'SHUTDOWN'
 
 STATUS_UPDATE_INTERVAL = 5  # seconds
+
+BaseParams = Tuple[Queue, Queue, Queue]
 
 
 class BaseListener(object):
@@ -25,22 +29,33 @@ class BaseListener(object):
     is instantiated in the remote process, and sets up a listening socket to
     receive data. Classes which inherit from this base class define
     how that data is written to disk.
-
-    Parameters
-    ----------
-    manager_params : dict
-        TaskManager configuration parameters
-    browser_params : list of dict
-        List of browser configuration dictionaries"""
+    """
     __metaclass = abc.ABCMeta
 
-    def __init__(self, status_queue, shutdown_queue, manager_params):
+    def __init__(self, status_queue: Queue, completion_queue: Queue,
+                 shutdown_queue: Queue):
+        """
+        Creates a BaseListener instance
+
+        Parameters
+        ----------
+        status_queue
+            queue that the current amount of records to be processed will
+            be sent to
+            also used for initialization
+        completion_queue
+            queue containing the visitIDs of saved records
+        shutdown_queue
+            queue that the main process can use to shut down the listener
+        """
         self.status_queue = status_queue
+        self.completion_queue = completion_queue
         self.shutdown_queue = shutdown_queue
         self._shutdown_flag = False
         self._last_update = time.time()  # last status update time
-        self.record_queue = None  # Initialized on `startup`
+        self.record_queue: Queue = None  # Initialized on `startup`
         self.logger = logging.getLogger('openwpm')
+        self.browser_map: Dict[int, int] = dict()  # maps crawl_id to visit_id
 
     @abc.abstractmethod
     def process_record(self, record):
@@ -61,6 +76,18 @@ class BaseListener(object):
         record : tuple
             2-tuple in format (table_name, data). `data` is a 2-tuple of the
             for (content, content_hash)"""
+
+    @abc.abstractmethod
+    def run_visit_completion_tasks(self, visit_id: int,
+                                   is_shutdown: bool = False):
+        """Will be called once a visit_id will receive no new records
+
+        Parameters
+        ----------
+        visit_id
+            the id that will receive no more updates
+        is_shutdown
+            if this call is made during shutdown"""
 
     def startup(self):
         """Run listener startup tasks
@@ -92,6 +119,25 @@ class BaseListener(object):
         )
         self._last_update = time.time()
 
+    def handle_special(self, data: Dict[str, Any]) -> None:
+        """
+            Messages for the table RECORD_TYPE_SPECIAL are metainformation
+            communicated to the aggregator
+            Supported message types:
+            - finalize: A message sent by the extension to
+                        signal that a visit_id is complete.
+        """
+        if data["meta_type"] == "finalize":
+            self.run_visit_completion_tasks(data["visit_id"])
+        else:
+            raise ValueError("Unexpected meta "
+                             "information type: %s" % data["meta_type"])
+
+    def mark_visit_complete(self, visit_id: int) -> None:
+        """ This function should be called to indicate that all records
+        relating to a certain visit_id have been saved"""
+        self.completion_queue.put(visit_id)
+
     def shutdown(self):
         """Run shutdown tasks defined in the base listener
 
@@ -104,6 +150,7 @@ class BaseListener(object):
         while not self.record_queue.empty():
             record = self.record_queue.get()
             self.process_record(record)
+        self.logger.info("Queue was flushed completely")
 
 
 class BaseAggregator(object):
@@ -127,6 +174,7 @@ class BaseAggregator(object):
         self.listener_address = None
         self.listener_process = None
         self.status_queue = Queue()
+        self.completion_queue = Queue()
         self.shutdown_queue = Queue()
         self._last_status = None
         self._last_status_received = None
@@ -178,10 +226,20 @@ class BaseAggregator(object):
             )
         return self._last_status
 
+    def get_new_completed_visits(self) -> List[int]:
+        """Returns a list of all visit ids that have been saved at the time
+        of calling this method.
+        This method will return an empty list in case no visit ids have
+        been finished since the last time this method was called"""
+        finished_visit_ids = list()
+        while not self.completion_queue.empty():
+            finished_visit_ids.append(self.completion_queue.get())
+        return finished_visit_ids
+
     def launch(self, listener_process_runner: Callable, *args: tuple) -> None:
         """Launch the aggregator listener process"""
-        args = (self.manager_params, self.status_queue,
-                self.shutdown_queue) + args
+        args = ((self.status_queue,
+                 self.completion_queue, self.shutdown_queue),) + args
         self.listener_process = Process(
             target=listener_process_runner,
             args=args
